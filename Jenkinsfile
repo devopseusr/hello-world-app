@@ -62,13 +62,13 @@ pipeline {
                                 configName: 'k8s-master',     // SSH config name in Jenkins
                                 transfers: [
                                     sshTransfer(
-                                        sourceFiles: 'kubernetesdeploy.yaml',  // Ensure this file exists
+                                        sourceFiles: 'deployment.yaml',  // Ensure this file exists
                                         remoteDirectory: '.',                  // Remote path
                                         execCommand: '''
                                             echo "Deploying new image..."
-                                            sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" kubernetesdeploy.yaml
-                                            kubectl apply -f kubernetesdeploy.yaml
-                                            kubectl rollout status deployment/bankapp-deployment
+                                            sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" deployment.yaml
+                                            kubectl apply -f deployment.yaml
+                                            kubectl rollout status deployment/helloworld-app-deployment
                                         '''
                                     )
                                 ]
