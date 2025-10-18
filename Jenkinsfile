@@ -17,10 +17,13 @@ pipeline {
             }
         }
 
-        stage('Application Build') {
+        stage('Install Dependencies') {
             steps {
-                echo '⚙️ Building Application using Maven'
-                sh 'mvn clean package -DskipTests'
+                echo '🐍 Installing Python dependencies'
+                sh '''
+                    pip install --upgrade pip
+                    pip install -r app/requirements.txt
+                '''
             }
         }
 
