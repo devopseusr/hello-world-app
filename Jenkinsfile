@@ -3,7 +3,7 @@ pipeline {
     agent { label 'slave1' }
 
     environment { 
-        DOCKERHUB_CREDENTIALS = credentials('dockerhublogin')
+        DOCKERHUB_CREDENTIALS = credentials('dockercred')
         IMAGE_NAME = "archana035/hello-worldapp"
         BUILD_TAG = "${BUILD_NUMBER}"
     }
