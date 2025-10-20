@@ -16,17 +16,6 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/devopseusr/hello-world-app'
             }
         }
-
-        stage('Install Dependencies') {
-            steps {
-                echo '🐍 Installing Python dependencies'
-                sh '''
-                    pip install --upgrade pip
-                    pip install -r app/requirements.txt
-                '''
-            }
-        }
-
         stage('Docker Build') {
             steps {
                 echo '🐳 Building Docker Image'
