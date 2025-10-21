@@ -1,4 +1,3 @@
-
 pipeline {
     agent { label 'slave1' }
 
@@ -46,66 +45,66 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes Cluster') {
-    steps {
-        echo '🚀 Deploying to Kubernetes Cluster'
-        script {
-            sshPublisher(
-                publishers: [
-                    sshPublisherDesc(
-                        configName: 'k8s-master',
-                        transfers: [
-                            sshTransfer(
-                                sourceFiles: 'k8s/deployment.yaml',
-                                remoteDirectory: '/home/devopsadmin/deployments',
-                                cleanRemote: true,
-                                execCommand: """
-                                    set -ex  # Exit on any error, print commands for debugging
+            steps {
+                echo '🚀 Deploying to Kubernetes Cluster'
+                script {
+                    sshPublisher(
+                        publishers: [
+                            sshPublisherDesc(
+                                configName: 'k8s-master',
+                                transfers: [
+                                    sshTransfer(
+                                        sourceFiles: 'k8s/deployment.yaml',
+                                        remoteDirectory: '/home/devopsadmin/deployments',
+                                        cleanRemote: true,
+                                        execCommand: """
+                                            set -ex  # Exit on error, print commands
 
-                                    # Ensure the directory exists
-                                    mkdir -p /home/devopsadmin/deployments
-                                    cd /home/devopsadmin/deployments
+                                            # Ensure directory exists
+                                            mkdir -p /home/devopsadmin/deployments
+                                            cd /home/devopsadmin/deployments
 
-                                    echo "📂 Current directory: $(pwd)"
-                                    echo "📄 Listing files:"
-                                    ls -l
+                                            echo "📂 Current directory: $(pwd)"
+                                            echo "📄 Listing files:"
+                                            ls -l
 
-                                    # Debug: check if deployment.yaml exists
-                                    if [ ! -f deployment.yaml ]; then
-                                        echo "❌ deployment.yaml not found!"
-                                        exit 1
-                                    fi
+                                            # Check deployment file exists
+                                            if [ ! -f deployment.yaml ]; then
+                                                echo "❌ deployment.yaml not found!"
+                                                exit 1
+                                            fi
 
-                                    # Replace image placeholder
-                                    echo "🔄 Updating image in deployment.yaml"
-                                    sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" deployment.yaml
+                                            # Update image in deployment.yaml
+                                            echo "🔄 Updating image to ${IMAGE_NAME}:${BUILD_TAG}"
+                                            sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" deployment.yaml
 
-                                    echo "📄 Updated deployment.yaml content:"
-                                    cat deployment.yaml
+                                            echo "📄 Updated deployment.yaml:"
+                                            cat deployment.yaml
 
-                                    # Apply Kubernetes deployment
-                                    echo "📦 Applying deployment to Kubernetes"
-                                    kubectl apply -f deployment.yaml
+                                            # Apply Kubernetes deployment
+                                            echo "📦 Applying deployment"
+                                            kubectl apply -f deployment.yaml
 
-                                    # Wait for rollout status
-                                    echo "⏳ Waiting for deployment rollout to complete..."
-                                    kubectl rollout status deployment/helloworld-app-deployment
-                                """
+                                            echo "⏳ Waiting for rollout"
+                                            kubectl rollout status deployment/helloworld-app-deployment
+                                        """
+                                    )
+                                ]
                             )
                         ]
                     )
-                ]
-            )
+                }
+            }
         }
     }
-}
-
 
     post {
         success {
             echo '✅ Deployment Successful! Your app is live on the cluster.'
         }
         failure {
-            echo '❌ Pipeline Failed. Please check Jenkins logs for details.'
+            echo '❌ Pipeline Failed. Check logs for details.'
         }
     }
 }
+
