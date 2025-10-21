@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hello
-          image: IMAGE_PLACEHOLDER
+          image: REPLACE_WITH_ECR_REPO:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
