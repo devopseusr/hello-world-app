@@ -49,36 +49,12 @@ pipeline {
                 echo '🚀 Deploying to Kubernetes Cluster'
                 script {
                     sshPublisher(
-                        publishers: [
-                            sshPublisherDesc(
-                                configName: 'k8s-master',
-                                transfers: [
-                                    sshTransfer(
-                                        sourceFiles: 'k8s/*.yaml',
-                                        remoteDirectory: '.',
-                                        execCommand: '''
-                                            sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:${BUILD_NUMBER}|g" deployment.yaml
-                                            kubectl apply -f deployment.yaml
-                                            kubectl apply -f service.yaml
-                                            kubectl apply -f ingress.yaml
-                                        ''',
-                                        cleanRemote: false,
-                                        flatten: false,
-                                        makeEmptyDirs: false,
-                                        noDefaultExcludes: false,
-                                        execTimeout: 120000
-                                    )
-                                ],
-                                usePromotionTimestamp: false,
-                                useWorkspaceInPromotion: false,
-                                verbose: false
-                            )
-                        ]
-                    )
-                }
-            }
-        }
-    } // end of stages
+                        sshPublisher(publishers: [sshPublisherDesc(configName: 'k8s-master', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:${BUILD_NUMBER}|g" deployment.yaml
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+kubectl apply -f ingress.yaml''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '.', remoteDirectorySDF: false, removePrefix: '', sourceFiles: 'k8s/*.yaml')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+                        
+                        
 
     post {
         success {
