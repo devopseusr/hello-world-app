@@ -15,6 +15,7 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/devopseusr/hello-world-app'
             }
         }
+
         stage('Docker Build') {
             steps {
                 echo '🐳 Building Docker Image'
@@ -47,27 +48,46 @@ pipeline {
             steps {
                 echo '🚀 Deploying to Kubernetes Cluster'
                 script {
-                    sshPublisher(publishers: [sshPublisherDesc(configName: 'k8s-master', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''set -ex
+                    sshPublisher(
+                        publishers: [
+                            sshPublisherDesc(
+                                configName: 'k8s-master',
+                                transfers: [
+                                    sshTransfer(
+                                        cleanRemote: false,
+                                        excludes: '',
+                                        sourceFiles: 'k8s/deployment.yaml',
+                                        remoteDirectory: '/home/devopsadmin',
+                                        execCommand: '''set -ex
 mkdir -p /home/devopsadmin/deployments
 cd /home/devopsadmin/deployments
 
 # List files for debugging
-echo "📂 Current directory: \\$(pwd)"
+echo "📂 Current directory: \$(pwd)"
 echo "📄 Listing files:"
 ls -l
 
 # Update image placeholder dynamically
-sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:\\${BUILD_NUMBER}|g" deployment.yaml
+sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:\${BUILD_NUMBER}|g" deployment.yaml
 
 # Apply the Kubernetes deployment
 kubectl apply -f deployment.yaml
 
 # Wait for rollout to complete
 kubectl rollout status deployment/hello-deployment
-''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '/home/devopsadmin', remoteDirectorySDF: false, removePrefix: '', sourceFiles: 'k8s/deployment.yaml')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
-
+''',
+                                        execTimeout: 120000,
+                                        flatten: false,
+                                        makeEmptyDirs: false,
+                                        noDefaultExcludes: false,
+                                        patternSeparator: '[, ]+',
+                                        remoteDirectorySDF: false,
+                                        removePrefix: ''
                                     )
-                                ]
+                                ],
+                                usePromotionTimestamp: false,
+                                useWorkspaceInPromotion: false,
+                                verbose: false
                             )
                         ]
                     )
@@ -85,3 +105,4 @@ kubectl rollout status deployment/hello-deployment
         }
     }
 }
+
