@@ -54,7 +54,7 @@ pipeline {
                                 configName: 'k8s-master',
                                 transfers: [
                                     sshTransfer(
-                                        sourceFiles: 'k8s/deployment.yaml',
+                                        sourceFiles: 'k8s/*.yaml',
                                         remoteDirectory: '.',
                                         execCommand: '''
                                             sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:${BUILD_NUMBER}|g" deployment.yaml
