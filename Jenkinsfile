@@ -80,5 +80,3 @@ pipeline {
         }
     }
 }
-
-this is my pipeline , and my deployment file is inside the git hub repo
