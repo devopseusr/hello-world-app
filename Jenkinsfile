@@ -49,12 +49,39 @@ pipeline {
                 echo '🚀 Deploying to Kubernetes Cluster'
                 script {
                     sshPublisher(
-                        sshPublisher(publishers: [sshPublisherDesc(configName: 'k8s-master', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:${BUILD_NUMBER}|g" deployment.yaml
-kubectl apply -f deployment.yaml
-kubectl apply -f service.yaml
-kubectl apply -f ingress.yaml''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '.', remoteDirectorySDF: false, removePrefix: '', sourceFiles: 'k8s/*.yaml')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
-                        
-                        
+                        publishers: [
+                            sshPublisherDesc(
+                                configName: 'k8s-master',
+                                transfers: [
+                                    sshTransfer(
+                                        cleanRemote: false,
+                                        sourceFiles: 'k8s/*.yaml',
+                                        remoteDirectory: '/home/devopsadmin/deployments',
+                                        execCommand: '''
+                                            set -ex
+                                            cd /home/devopsadmin/deployments
+
+                                            # Update image in deployment.yaml
+                                            sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:${BUILD_NUMBER}|g" deployment.yaml
+
+                                            # Apply all Kubernetes manifests
+                                            kubectl apply -f deployment.yaml
+                                            kubectl apply -f service.yaml
+                                            kubectl apply -f ingress.yaml
+
+                                            # Wait for rollout
+                                            kubectl rollout status deployment/hello-deployment
+                                        ''',
+                                        execTimeout: 120000
+                                    )
+                                ]
+                            )
+                        ]
+                    )
+                }
+            }
+        }
+    }
 
     post {
         success {
