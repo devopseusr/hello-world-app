@@ -66,7 +66,7 @@ pipeline {
                                             kubectl apply -f ingress.yaml
                                             
                                             # Wait for rollout to complete
-                                            kubectl rollout status deployment/hello-deployment
+                                            #kubectl rollout status deployment/hello-deployment
                                         ''',
                                         cleanRemote: false,
                                         flatten: false,
