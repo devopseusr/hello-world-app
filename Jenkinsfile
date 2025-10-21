@@ -46,37 +46,59 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes Cluster') {
-            steps {
-                echo '🚀 Deploying to Kubernetes Cluster'
-                script {
-                    sshPublisher(
-                        publishers: [
-                            sshPublisherDesc(
-                                configName: 'k8s-master',
-                                transfers: [
-                                    sshTransfer(
-                                        sourceFiles: 'k8s/deployment.yaml',
-                                        remoteDirectory: '/home/devopsadmin/deployments',
-                                        cleanRemote: true,
-                                        execCommand: """
-                                            set -e
-                                            mkdir -p /home/devopsadmin/deployments
-                                            cd /home/devopsadmin/deployments
-                                            echo "Deploying new image: ${IMAGE_NAME}:${BUILD_TAG}"
-                                            ls -l
-                                            sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" deployment.yaml
-                                            kubectl apply -f deployment.yaml
-                                            kubectl rollout status deployment/helloworld-app-deployment
-                                        """
-                                    )
-                                ]
+    steps {
+        echo '🚀 Deploying to Kubernetes Cluster'
+        script {
+            sshPublisher(
+                publishers: [
+                    sshPublisherDesc(
+                        configName: 'k8s-master',
+                        transfers: [
+                            sshTransfer(
+                                sourceFiles: 'k8s/deployment.yaml',
+                                remoteDirectory: '/home/devopsadmin/deployments',
+                                cleanRemote: true,
+                                execCommand: """
+                                    set -ex  # Exit on any error, print commands for debugging
+
+                                    # Ensure the directory exists
+                                    mkdir -p /home/devopsadmin/deployments
+                                    cd /home/devopsadmin/deployments
+
+                                    echo "📂 Current directory: $(pwd)"
+                                    echo "📄 Listing files:"
+                                    ls -l
+
+                                    # Debug: check if deployment.yaml exists
+                                    if [ ! -f deployment.yaml ]; then
+                                        echo "❌ deployment.yaml not found!"
+                                        exit 1
+                                    fi
+
+                                    # Replace image placeholder
+                                    echo "🔄 Updating image in deployment.yaml"
+                                    sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" deployment.yaml
+
+                                    echo "📄 Updated deployment.yaml content:"
+                                    cat deployment.yaml
+
+                                    # Apply Kubernetes deployment
+                                    echo "📦 Applying deployment to Kubernetes"
+                                    kubectl apply -f deployment.yaml
+
+                                    # Wait for rollout status
+                                    echo "⏳ Waiting for deployment rollout to complete..."
+                                    kubectl rollout status deployment/helloworld-app-deployment
+                                """
                             )
                         ]
                     )
-                }
-            }
+                ]
+            )
         }
-    }  // closes 'stages' block
+    }
+}
+
 
     post {
         success {
