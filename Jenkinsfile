@@ -5,6 +5,8 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhublogin')
         IMAGE_NAME = "archana035/hello-worldapp"
         BUILD_TAG = "${BUILD_NUMBER}"
+        K8S_DEPLOYMENT = "hello-world-deploy"   // Kubernetes deployment name
+        K8S_CONTAINER = "hello-world-container" // Container name inside deployment
     }
 
     stages {
@@ -47,24 +49,45 @@ pipeline {
         stage('Deploy to Kubernetes Cluster') {
             steps {
                 echo '🚀 Deploying to Kubernetes Cluster'
-                script {
-                    sshPublisher(
-                        publishers: [sshPublisherDesc(configName: 'k8s-master', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:${BUILD_NUMBER}|g" deployment.yaml 
-                                                                                                        kubectl apply -f deployment.yaml 
-                                                                                                        kubectl apply -f service.yaml 
-                                                                                                        kubectl apply -f ingress.yaml''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '.', remoteDirectorySDF: false, removePrefix: '', sourceFiles: 'k8s/*.yaml')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
-                        
-                }
+                sshPublisher(
+                    publishers: [sshPublisherDesc(
+                        configName: 'k8s-master',
+                        transfers: [
+                            sshTransfer(
+                                cleanRemote: false,
+                                excludes: '',
+                                execCommand: """
+                                    echo "Updating deployment image..."
+                                    kubectl set image deployment/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${IMAGE_NAME}:${BUILD_TAG} --record
+                                    kubectl rollout status deployment/${K8S_DEPLOYMENT} || exit 1
+                                    echo "✅ Deployment successful!"
+                                """,
+                                execTimeout: 120000,
+                                flatten: false,
+                                makeEmptyDirs: false,
+                                noDefaultExcludes: false,
+                                patternSeparator: '[, ]+',
+                                remoteDirectory: '.',
+                                remoteDirectorySDF: false,
+                                removePrefix: '',
+                                sourceFiles: ''
+                            )
+                        ],
+                        usePromotionTimestamp: false,
+                        useWorkspaceInPromotion: false,
+                        verbose: true
+                    )]
+                )
             }
         }
     }
 
     post {
         success {
-            echo '✅ Deployment Successful! Your app is live on the cluster.'
+            echo '✅ Pipeline completed successfully! App is live on Kubernetes.'
         }
         failure {
-            echo '❌ Pipeline Failed. Please check Jenkins logs for details.'
+            echo '❌ Pipeline failed. Check Jenkins logs for errors.'
         }
     }
 }
