@@ -56,7 +56,7 @@ pipeline {
                                     sshTransfer(
                                         cleanRemote: false,
                                         sourceFiles: 'k8s/*.yaml',
-                                        remoteDirectory: '/home/devopsadmin/deployments',
+                                        remoteDirectory: '.',
                                         execCommand: '''
                                             set -ex
                                             cd /home/devopsadmin/deployments
