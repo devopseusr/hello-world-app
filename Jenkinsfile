@@ -59,6 +59,8 @@ pipeline {
                                         execCommand: '''
                                             sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:${BUILD_NUMBER}|g" deployment.yaml
                                             kubectl apply -f deployment.yaml
+                                            kubectl apply -f service.yaml
+                                            kubectl apply -f ingress.yaml
                                         ''',
                                         cleanRemote: false,
                                         flatten: false,
