@@ -48,12 +48,35 @@ pipeline {
             steps {
                 echo '🚀 Deploying to Kubernetes Cluster'
                 script {
-                    sshPublisher(publishers: [sshPublisherDesc(configName: 'k8s-master', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:\\${BUILD_NUMBER}|g" deployment.yaml
-kubectl apply -f deployment.yaml''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '.', remoteDirectorySDF: false, removePrefix: '', sourceFiles: 'k8s/deployment.yaml')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
-                      
-
-
-    
+                    sshPublisher(
+                        publishers: [
+                            sshPublisherDesc(
+                                configName: 'k8s-master',
+                                transfers: [
+                                    sshTransfer(
+                                        sourceFiles: 'k8s/deployment.yaml',
+                                        remoteDirectory: '.',
+                                        execCommand: '''
+                                            sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:${BUILD_NUMBER}|g" deployment.yaml
+                                            kubectl apply -f deployment.yaml
+                                        ''',
+                                        cleanRemote: false,
+                                        flatten: false,
+                                        makeEmptyDirs: false,
+                                        noDefaultExcludes: false,
+                                        execTimeout: 120000
+                                    )
+                                ],
+                                usePromotionTimestamp: false,
+                                useWorkspaceInPromotion: false,
+                                verbose: false
+                            )
+                        ]
+                    )
+                }
+            }
+        }
+    } // end of stages
 
     post {
         success {
@@ -64,4 +87,3 @@ kubectl apply -f deployment.yaml''', execTimeout: 120000, flatten: false, makeEm
         }
     }
 }
-
