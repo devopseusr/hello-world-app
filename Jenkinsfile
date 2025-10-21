@@ -19,28 +19,30 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo '🐳 Building Docker Image'
-                sh """
+                sh '''
                     docker build -t ${IMAGE_NAME}:${BUILD_TAG} .
                     docker tag ${IMAGE_NAME}:${BUILD_TAG} ${IMAGE_NAME}:latest
                     docker image list
-                """
+                '''
             }
         }
 
         stage('Login to DockerHub') {
             steps {
                 echo '🔐 Logging into DockerHub'
-                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                sh '''
+                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                '''
             }
         }
 
         stage('Publish Image to DockerHub') {
             steps {
                 echo '📤 Pushing Image to DockerHub'
-                sh """
+                sh '''
                     docker push ${IMAGE_NAME}:${BUILD_TAG}
                     docker push ${IMAGE_NAME}:latest
-                """
+                '''
             }
         }
 
@@ -57,10 +59,10 @@ pipeline {
                                         sourceFiles: 'k8s/deployment.yaml',
                                         remoteDirectory: '/home/devopsadmin/deployments',
                                         cleanRemote: true,
-                                        execCommand: """
-                                            set -ex  # Exit on error, print commands
+                                        execCommand: '''
+                                            set -ex
 
-                                            # Ensure directory exists
+                                            # Ensure the directory exists
                                             mkdir -p /home/devopsadmin/deployments
                                             cd /home/devopsadmin/deployments
 
@@ -68,26 +70,27 @@ pipeline {
                                             echo "📄 Listing files:"
                                             ls -l
 
-                                            # Check deployment file exists
+                                            # Check if deployment.yaml exists
                                             if [ ! -f deployment.yaml ]; then
                                                 echo "❌ deployment.yaml not found!"
                                                 exit 1
                                             fi
 
-                                            # Update image in deployment.yaml
-                                            echo "🔄 Updating image to ${IMAGE_NAME}:${BUILD_TAG}"
+                                            # Replace image placeholder
+                                            echo "🔄 Updating image in deployment.yaml"
                                             sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" deployment.yaml
 
-                                            echo "📄 Updated deployment.yaml:"
+                                            echo "📄 Updated deployment.yaml content:"
                                             cat deployment.yaml
 
                                             # Apply Kubernetes deployment
-                                            echo "📦 Applying deployment"
+                                            echo "📦 Applying deployment to Kubernetes"
                                             kubectl apply -f deployment.yaml
 
-                                            echo "⏳ Waiting for rollout"
+                                            # Wait for rollout status
+                                            echo "⏳ Waiting for deployment rollout to complete..."
                                             kubectl rollout status deployment/helloworld-app-deployment
-                                        """
+                                        '''
                                     )
                                 ]
                             )
@@ -96,15 +99,14 @@ pipeline {
                 }
             }
         }
-    }
+    } // end of stages
 
     post {
         success {
             echo '✅ Deployment Successful! Your app is live on the cluster.'
         }
         failure {
-            echo '❌ Pipeline Failed. Check logs for details.'
+            echo '❌ Pipeline Failed. Please check Jenkins logs for details.'
         }
     }
 }
-
