@@ -45,34 +45,37 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes Cluster') {
-            steps {
-                echo '🚀 Deploying to Kubernetes Cluster'
-                script {
-                    sshPublisher(
-                        publishers: [
-                            sshPublisherDesc(
-                                configName: 'k8s-master',
-                                transfers: [
-                                    sshTransfer(
-                                        sourceFiles: '**/deployment.yaml',
-                                        remoteDirectory: '/home/devopsadmin',
-                                        execCommand: """
-                                            set -e
-                                            cd /home/devopsadmin
-                                            echo "Deploying new image: ${IMAGE_NAME}:${BUILD_TAG}"
-                                            sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" deployment.yaml
-                                            kubectl apply -f deployment.yaml
-                                            kubectl rollout status deployment/helloworld-app-deployment
-                                        """
-                                    )
-                                ]
+    steps {
+        echo 'Deploying to Kubernetes Cluster'
+        script {
+            sshPublisher(
+                publishers: [
+                    sshPublisherDesc(
+                        configName: 'k8s-master',
+                        transfers: [
+                            sshTransfer(
+                                sourceFiles: 'k8s/deployment.yaml',
+                                remoteDirectory: '/home/devopsadmin/deployments',
+                                cleanRemote: true,
+                                execCommand: """
+                                    set -e
+                                    mkdir -p /home/devopsadmin/deployments
+                                    cd /home/devopsadmin/deployments
+                                    echo "Deploying new image: ${IMAGE_NAME}:${BUILD_TAG}"
+                                    ls -l
+                                    sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" deployment.yaml
+                                    kubectl apply -f deployment.yaml
+                                    kubectl rollout status deployment/helloworld-app-deployment
+                                """
                             )
                         ]
                     )
-                }
-            }
+                ]
+            )
         }
-    }   // <-- closes stages block
+    }
+}
+
 
     post {
         success {
