@@ -47,20 +47,25 @@ pipeline {
             steps {
                 echo '🚀 Deploying to Kubernetes Cluster'
                 script {
-                    sshPublisher(
-                        publishers: [
-                            sshPublisherDesc(
-                                configName: 'k8s-master',     // SSH config name in Jenkins
-                                transfers: [
-                                    sshTransfer(
-                                        sourceFiles: 'deployment.yaml',  // Ensure this file exists
-                                        remoteDirectory: '.',                  // Remote path
-                                        execCommand: '''
-                                            echo "Deploying new image..."
-                                            sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" deployment.yaml
-                                            kubectl apply -f deployment.yaml
-                                            kubectl rollout status deployment/helloworld-app-deployment
-                                        '''
+                    sshPublisher(publishers: [sshPublisherDesc(configName: 'k8s-master', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''set -ex
+mkdir -p /home/devopsadmin/deployments
+cd /home/devopsadmin/deployments
+
+# List files for debugging
+echo "📂 Current directory: \\$(pwd)"
+echo "📄 Listing files:"
+ls -l
+
+# Update image placeholder dynamically
+sed -i "s|REPLACE_WITH_ECR_REPO:latest|archana035/hello-worldapp:\\${BUILD_NUMBER}|g" deployment.yaml
+
+# Apply the Kubernetes deployment
+kubectl apply -f deployment.yaml
+
+# Wait for rollout to complete
+kubectl rollout status deployment/hello-deployment
+''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '/home/devopsadmin', remoteDirectorySDF: false, removePrefix: '', sourceFiles: 'k8s/deployment.yaml')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+
                                     )
                                 ]
                             )
