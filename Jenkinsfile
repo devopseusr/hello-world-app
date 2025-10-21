@@ -15,34 +15,31 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/devopseusr/hello-world-app'
             }
         }
-
         stage('Docker Build') {
             steps {
                 echo '🐳 Building Docker Image'
-                sh '''
+                sh """
                     docker build -t ${IMAGE_NAME}:${BUILD_TAG} .
                     docker tag ${IMAGE_NAME}:${BUILD_TAG} ${IMAGE_NAME}:latest
                     docker image list
-                '''
+                """
             }
         }
 
         stage('Login to DockerHub') {
             steps {
                 echo '🔐 Logging into DockerHub'
-                sh '''
-                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                '''
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
             }
         }
 
         stage('Publish Image to DockerHub') {
             steps {
                 echo '📤 Pushing Image to DockerHub'
-                sh '''
+                sh """
                     docker push ${IMAGE_NAME}:${BUILD_TAG}
                     docker push ${IMAGE_NAME}:latest
-                '''
+                """
             }
         }
 
@@ -53,42 +50,15 @@ pipeline {
                     sshPublisher(
                         publishers: [
                             sshPublisherDesc(
-                                configName: 'k8s-master',
+                                configName: 'k8s-master',     // SSH config name in Jenkins
                                 transfers: [
                                     sshTransfer(
-                                        sourceFiles: 'k8s/deployment.yaml',
-                                        remoteDirectory: '/home/devopsadmin/deployments',
-                                        cleanRemote: true,
+                                        sourceFiles: 'deployment.yaml',  // Ensure this file exists
+                                        remoteDirectory: '.',                  // Remote path
                                         execCommand: '''
-                                            set -ex
-
-                                            # Ensure the directory exists
-                                            mkdir -p /home/devopsadmin/deployments
-                                            cd /home/devopsadmin/deployments
-
-                                            echo "📂 Current directory: $(pwd)"
-                                            echo "📄 Listing files:"
-                                            ls -l
-
-                                            # Check if deployment.yaml exists
-                                            if [ ! -f deployment.yaml ]; then
-                                                echo "❌ deployment.yaml not found!"
-                                                exit 1
-                                            fi
-
-                                            # Replace image placeholder
-                                            echo "🔄 Updating image in deployment.yaml"
+                                            echo "Deploying new image..."
                                             sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${BUILD_TAG}|g" deployment.yaml
-
-                                            echo "📄 Updated deployment.yaml content:"
-                                            cat deployment.yaml
-
-                                            # Apply Kubernetes deployment
-                                            echo "📦 Applying deployment to Kubernetes"
                                             kubectl apply -f deployment.yaml
-
-                                            # Wait for rollout status
-                                            echo "⏳ Waiting for deployment rollout to complete..."
                                             kubectl rollout status deployment/helloworld-app-deployment
                                         '''
                                     )
@@ -99,7 +69,7 @@ pipeline {
                 }
             }
         }
-    } // end of stages
+    }
 
     post {
         success {
@@ -110,3 +80,5 @@ pipeline {
         }
     }
 }
+
+this is my pipeline , and my deployment file is inside the git hub repo
