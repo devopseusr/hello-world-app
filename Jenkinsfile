@@ -6,7 +6,7 @@ pipeline {
         IMAGE_NAME = "archana035/hello-worldapp"
         BUILD_TAG = "${BUILD_NUMBER}"
         K8S_DEPLOYMENT = "hello-deployment"   // Kubernetes deployment name
-        K8S_CONTAINER = "hello-world-container" // Container name inside deployment
+        K8S_CONTAINER = "hello" // Container name inside deployment
     }
 
     stages {
