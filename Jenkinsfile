@@ -45,42 +45,53 @@ pipeline {
                 """
             }
         }
-
         stage('Deploy to Kubernetes Cluster') {
-            steps {
-                echo '🚀 Deploying to Kubernetes Cluster'
-                sshPublisher(
-                    publishers: [sshPublisherDesc(
-                        configName: 'k8s-master',
-                        transfers: [
-                            sshTransfer(
-                                cleanRemote: false,
-                                excludes: '',
-                                execCommand: """
-                                    echo "Updating deployment image..."
-                                    kubectl set image deployment/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${IMAGE_NAME}:${BUILD_TAG} --record
-                                    kubectl rollout status deployment/${K8S_DEPLOYMENT} || exit 1
-                                    echo "✅ Deployment successful!"
-                                """,
-                                execTimeout: 300000,
-                                flatten: false,
-                                makeEmptyDirs: false,
-                                noDefaultExcludes: false,
-                                patternSeparator: '[, ]+',
-                                remoteDirectory: '.',
-                                remoteDirectorySDF: false,
-                                removePrefix: '',
-                                sourceFiles: ''
-                            )
-                        ],
-                        usePromotionTimestamp: false,
-                        useWorkspaceInPromotion: false,
-                        verbose: true
-                    )]
-                )
-            }
-        }
+    steps {
+        echo '🚀 Deploying to Kubernetes Cluster'
+        sshPublisher(
+            publishers: [sshPublisherDesc(
+                configName: 'k8s-master',
+                transfers: [
+                    sshTransfer(
+                        cleanRemote: false,
+                        excludes: '',
+                        execCommand: """
+                            echo "🔍 Checking if deployment '${K8S_DEPLOYMENT}' exists..."
+
+                            if kubectl get deployment ${K8S_DEPLOYMENT} >/dev/null 2>&1; then
+                                echo "✅ Deployment exists. Updating image..."
+                                kubectl set image deployment/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${IMAGE_NAME}:${BUILD_TAG} --record
+                                kubectl rollout status deployment/${K8S_DEPLOYMENT} --timeout=120s || exit 1
+                                echo "🎉 Deployment updated successfully!"
+                            else
+                                echo "🚀 Deployment not found. Preparing YAMLs..."
+                                sed -i "s|REPLACE_WITH_ECR_REPO:latest|${IMAGE_NAME}:${BUILD_TAG}|g" k8s/deployment.yaml
+                                echo "📦 Applying deployment, service, and ingress..."
+                                kubectl apply -f k8s/deployment.yaml
+                                kubectl apply -f k8s/service.yaml
+                                kubectl apply -f k8s/ingress.yaml
+                                kubectl rollout status deployment/${K8S_DEPLOYMENT} --timeout=120s || exit 1
+                                echo "🎉 First-time deployment successful!"
+                            fi
+                        """,
+                        execTimeout: 300000,
+                        flatten: false,
+                        makeEmptyDirs: false,
+                        noDefaultExcludes: false,
+                        patternSeparator: '[, ]+',
+                        remoteDirectory: '.',
+                        remoteDirectorySDF: false,
+                        removePrefix: '',
+                        sourceFiles: ''
+                    )
+                ],
+                usePromotionTimestamp: false,
+                useWorkspaceInPromotion: false,
+                verbose: true
+            )]
+        )
     }
+}
 
     post {
         success {
