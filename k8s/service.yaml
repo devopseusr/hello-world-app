@@ -5,11 +5,10 @@ metadata:
   labels:
     app: hello
 spec:
-  type: LoadBalancer
+  type: NodePort
   ports:
     - port: 80
       targetPort: 8080
-      protocol: TCP
-      name: http
+      nodePort: 30080   # you can choose a port between 30000–32767
   selector:
     app: hello
