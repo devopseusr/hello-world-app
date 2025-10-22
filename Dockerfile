@@ -2,7 +2,6 @@ FROM python:3.11
 
 WORKDIR /app
 
-# Install build tools and SSL certificates
 RUN apt-get update && apt-get install -y \
     build-essential \
     python3-dev \
@@ -12,6 +11,14 @@ RUN apt-get update && apt-get install -y \
 
 COPY app/requirements.txt .
 
-# Upgrade pip and install dependencies
 RUN pip install --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir -r requirements.txt --prefix=/install
+    && pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY app/ .
+
+# Expose port
+EXPOSE 8080
+
+# Run the app
+CMD ["python", "app.py"]
