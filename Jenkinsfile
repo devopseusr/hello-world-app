@@ -62,7 +62,7 @@ pipeline {
                                     kubectl rollout status deployment/${K8S_DEPLOYMENT} || exit 1
                                     echo "✅ Deployment successful!"
                                 """,
-                                execTimeout: 120000,
+                                execTimeout: 300000,
                                 flatten: false,
                                 makeEmptyDirs: false,
                                 noDefaultExcludes: false,
