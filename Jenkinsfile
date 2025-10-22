@@ -5,7 +5,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhublogin')
         IMAGE_NAME = "archana035/hello-worldapp"
         BUILD_TAG = "${BUILD_NUMBER}"
-        K8S_DEPLOYMENT = "hello-world-deploy"   // Kubernetes deployment name
+        K8S_DEPLOYMENT = "hello-deployment"   // Kubernetes deployment name
         K8S_CONTAINER = "hello-world-container" // Container name inside deployment
     }
 
